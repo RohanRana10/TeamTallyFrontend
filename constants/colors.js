@@ -15,7 +15,8 @@ const COLORS = {
     bgSurfaceLightest: '#4D4D4D',
     textHighlightDarkest: '#3B6F06',
     textDarkest: '#4D4D4D',
-    danger: '#E03137'
+    danger: '#E03137',
+    success: '#27A376'
 }
 
 export default COLORS;

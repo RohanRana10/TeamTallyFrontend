@@ -153,7 +153,7 @@ export default function Signup() {
                                     </View> :
                                     <TouchableOpacity onPress={() => { console.log("TODO: signup API call") }} style={{ width: wp(90), height: hp(5.41), backgroundColor: COLORS.bgHighlight, paddingHorizontal: hp(2), paddingVertical: hp(1.3), gap: SPACING.S, borderRadius: RADIUS.S }}>
                                         <Text style={{ alignSelf: 'center', fontSize: hp(2.1), fontWeight: '400', color: COLORS.black, fontFamily: 'Outfit-Bold' }}>
-                                            Login
+                                            Signup
                                         </Text>
                                     </TouchableOpacity>
                                 }

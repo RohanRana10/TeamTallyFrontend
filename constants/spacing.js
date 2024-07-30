@@ -1,6 +1,7 @@
 // constants/spacing.js
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 const SPACING = {
+    XXS: hp(0.2),
     XS: hp(0.5),
     S: hp(1),
     SM: hp(1.5),
