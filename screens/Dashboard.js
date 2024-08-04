@@ -1,8 +1,8 @@
-import { FlatList, Image, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { FlatList, Image, Modal, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import React, { useState } from 'react'
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import COLORS from '../constants/colors';
-import { AntDesign, Entypo, FontAwesome5, Ionicons } from '@expo/vector-icons';
+import { AntDesign, Entypo, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import SPACING from '../constants/spacing';
 import RADIUS from '../constants/radius';
 
@@ -21,6 +21,16 @@ export default function Dashboard({ navigation }) {
         // { id: '10', title: 'Fifth Item' },
     ]);
 
+    const [modalVisible, setModalVisible] = useState(false);
+    const [joinGroupModalVisible, setJoinGroupModalVisible] = useState(false);
+    const [joinMode, setJoinMode] = useState(false);
+    const [groupCode, setGroupCode] = useState("");
+
+    const toggleModal = () => {
+        setModalVisible(!modalVisible);
+        setJoinMode(false);
+    };
+
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
             <StatusBar barStyle={'light-content'} backgroundColor={'#000000'} />
@@ -31,11 +41,11 @@ export default function Dashboard({ navigation }) {
                     </Text>
                     <View style={{ width: wp(20), justifyContent: 'space-between', flexDirection: 'row', alignItems: 'center' }}>
 
-                        <TouchableOpacity onPress={() => navigation.navigate('BarcodeScanner')}>
+                        <TouchableOpacity onPress={() => console.log("Search button pressed")}>
                             <Ionicons name="search" size={hp(3.2)} color={COLORS.textHighlight} />
                         </TouchableOpacity>
 
-                        <TouchableOpacity onPress={() => navigation.navigate('Login', { url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" })}>
+                        <TouchableOpacity onPress={() => navigation.navigate('Profile', { url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" })}>
                             <Image source={{ uri: "https://res.cloudinary.com/dyhwcqnzl/image/upload/v1721803893/cjgpyrqtry0debrehlkd.png" }} style={{ width: hp(4.5), height: hp(4.5), borderRadius: hp(100) }} />
                         </TouchableOpacity>
                     </View>
@@ -94,7 +104,7 @@ export default function Dashboard({ navigation }) {
                 {/* </ScrollView> */}
             </View>
 
-            <TouchableOpacity onPress={() => navigation.navigate('CreateGroup')} style={{ height: hp(6), backgroundColor: COLORS.bgHighlight, position: 'absolute', bottom: hp(5), right: wp(5), justifyContent: 'center', alignItems: 'center', paddingHorizontal: SPACING.M, borderRadius: RADIUS.XS }}>
+            <TouchableOpacity onPress={toggleModal} style={{ height: hp(6), backgroundColor: COLORS.bgHighlight, position: 'absolute', bottom: hp(5), right: wp(5), justifyContent: 'center', alignItems: 'center', paddingHorizontal: SPACING.M, borderRadius: RADIUS.XS }}>
                 <View style={{ flexDirection: 'row', gap: SPACING.XS, alignItems: 'center' }}>
                     <Entypo name="plus" size={hp(3)} color={COLORS.black} />
                     <Text style={{ fontFamily: 'Outfit-Bold', fontSize: hp(2.1) }}>
@@ -103,8 +113,121 @@ export default function Dashboard({ navigation }) {
                 </View>
             </TouchableOpacity>
 
+            <Modal
+                transparent={true}
+                visible={modalVisible}
+                animationType="slide"
+                onRequestClose={toggleModal}
+            >
+                <View style={styles.modalBackground}>
+                    <View style={styles.modalContainer}>
+
+                        <View style={{ width: wp(90), justifyContent: 'space-between', alignItems: 'center', flexDirection: 'row', height: hp(10) }}>
+                            <Text style={{ color: COLORS.textBase, fontFamily: 'Outfit-SemiBold', fontSize: hp(3) }}>{joinMode ? "Join Group" : "New Group"}</Text>
+                            <TouchableOpacity onPress={toggleModal} style={{ backgroundColor: COLORS.black, width: hp(4), height: hp(4), justifyContent: 'center', alignItems: 'center', borderRadius: hp(10) }}>
+                                <Entypo name="cross" size={hp(2.4)} color="white" />
+                            </TouchableOpacity>
+                        </View>
+
+                        {!joinMode &&
+                            <View style={{ width: wp(90), flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <TouchableOpacity onPress={() => { toggleModal(); navigation.navigate('CreateGroup'); }} style={{ width: wp(43), backgroundColor: COLORS.bgHighlight, justifyContent: 'center', alignItems: 'center', paddingHorizontal: SPACING.M, borderRadius: RADIUS.XS, height: hp(6) }}>
+                                    <Text style={{ fontFamily: 'Outfit-Bold', fontSize: hp(2.1) }}>
+                                        Create
+                                    </Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => { setJoinMode(true) }} style={{ width: wp(43), backgroundColor: COLORS.bgHighlight, justifyContent: 'center', alignItems: 'center', paddingHorizontal: SPACING.M, borderRadius: RADIUS.XS, height: hp(6) }}>
+                                    <Text style={{ fontFamily: 'Outfit-Bold', fontSize: hp(2.1) }}>
+                                        Join
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        }
+
+                        {joinMode &&
+                            <View style={{ width: wp(90), gap: SPACING.M }}>
+                                <View style={{ width: wp(90), height: hp(9.1), gap: SPACING.S }}>
+                                    <Text style={{ color: COLORS.textDarker, fontSize: hp(1.8), fontFamily: 'Outfit-Regular' }}>
+                                        Group Code
+                                    </Text>
+                                    <View style={{ width: wp(90), height: hp(5.54), borderRadius: RADIUS.S, padding: SPACING.S, gap: SPACING.S, backgroundColor: COLORS.background, flexDirection: 'row', alignItems: 'center' }}>
+
+                                        {/* <MaterialIcons name="title" size={hp(2.4)} color={COLORS.textHighlight} /> */}
+                                        <MaterialIcons name="password" size={hp(2.4)} color={COLORS.textHighlight} />
+                                        <TextInput
+                                            autoCapitalize='none'
+                                            selectionColor={COLORS.textHighlight}
+                                            onChangeText={text => setGroupCode(text)}
+                                            value={groupCode}
+                                            style={{ color: COLORS.textDarker, fontWeight: '400', fontSize: hp(1.8), width: wp(76.5), height: hp(2.5), fontFamily: 'Outfit-Regular' }}
+                                            placeholder='Enter group code'
+                                            placeholderTextColor={COLORS.textDarker}
+                                        />
+                                    </View>
+                                </View>
+
+                                <TouchableOpacity style={{ backgroundColor: COLORS.bgHighlight, borderRadius: RADIUS.XS, width: wp(90), height: hp(5), alignSelf: 'center', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Text style={{ fontSize: hp(2.1), color: COLORS.black, fontFamily: 'Outfit-Bold' }}>
+                                        Join
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        }
+
+                    </View>
+                </View>
+            </Modal>
+
+            {/* <Modal
+                transparent={true}
+                visible={joinGroupModalVisible}
+                animationType="slide"
+                onRequestClose={() => setJoinGroupModalVisible(false)}
+            >
+                <View style={styles.modalBackground}>
+                    <View style={styles.modalContainer}>
+
+                        <View style={{ width: wp(90), justifyContent: 'space-between', alignItems: 'center', flexDirection: 'row', height: hp(10) }}>
+                            <Text style={{ color: COLORS.textBase, fontFamily: 'Outfit-SemiBold', fontSize: hp(3) }}>New Group</Text>
+                            <TouchableOpacity onPress={() => setJoinGroupModalVisible(false)} style={{ backgroundColor: COLORS.black, width: hp(4), height: hp(4), justifyContent: 'center', alignItems: 'center', borderRadius: hp(10) }}>
+                                <Entypo name="cross" size={hp(2.4)} color="white" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={{ width: wp(90), flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <TouchableOpacity onPress={() => { toggleModal(); navigation.navigate('CreateGroup'); }} style={{ width: wp(43), backgroundColor: COLORS.bgHighlight, justifyContent: 'center', alignItems: 'center', paddingHorizontal: SPACING.M, borderRadius: RADIUS.XS, height: hp(6) }}>
+                                <Text style={{ fontFamily: 'Outfit-Bold', fontSize: hp(2.1) }}>
+                                    Create
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => { toggleModal(); }} style={{ width: wp(43), backgroundColor: COLORS.bgHighlight, justifyContent: 'center', alignItems: 'center', paddingHorizontal: SPACING.M, borderRadius: RADIUS.XS, height: hp(6) }}>
+                                <Text style={{ fontFamily: 'Outfit-Bold', fontSize: hp(2.1) }}>
+                                    Join
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+
+                    </View>
+                </View>
+            </Modal> */}
+
         </SafeAreaView>
     )
 }
 
-const styles = StyleSheet.create({})
+const styles = StyleSheet.create({
+
+    modalBackground: {
+        flex: 1,
+        justifyContent: 'flex-end',
+        backgroundColor: 'rgba(0, 0, 0, 0.8)', // 50% translucent background
+    },
+    modalContainer: {
+        width: wp(100),
+        backgroundColor: COLORS.bgSurfaceLighter,
+        borderTopRightRadius: RADIUS.L,
+        borderTopLeftRadius: RADIUS.L,
+        alignItems: 'center',
+        paddingBottom: hp(5)
+    },
+})

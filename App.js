@@ -11,6 +11,7 @@ import Group from './screens/Group';
 import GroupSettings from './screens/GroupSettings';
 import EditGroup from './screens/EditGroup';
 import CreatePayment from './screens/CreatePayment';
+import Profile from './screens/Profile';
 
 const Stack = createStackNavigator();
 
@@ -30,7 +31,7 @@ export default function App() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName='Dashboard'
+      <Stack.Navigator initialRouteName='Login'
         screenOptions={{
           headerShown: false,
           presentation: 'transparentModal'
@@ -48,6 +49,7 @@ export default function App() {
         <Stack.Screen name='GroupSettings' component={GroupSettings} options={{ headerShown: false }} />
         <Stack.Screen name='EditGroup' component={EditGroup} options={{ headerShown: false }} />
         <Stack.Screen name='CreatePayment' component={CreatePayment} options={{ headerShown: false }} />
+        <Stack.Screen name='Profile' component={Profile} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
