@@ -12,7 +12,11 @@ import GroupSettings from './screens/GroupSettings';
 import EditGroup from './screens/EditGroup';
 import CreatePayment from './screens/CreatePayment';
 import Profile from './screens/Profile';
+// import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { UserProvider } from './context/userContext';
+import { ToastProvider } from 'react-native-toast-notifications';
 
+// const Stack = createNativeStackNavigator();
 const Stack = createStackNavigator();
 
 export default function App() {
@@ -31,27 +35,31 @@ export default function App() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName='Login'
-        screenOptions={{
-          headerShown: false,
-          presentation: 'transparentModal'
-          // transitionSpec: {
-          //   open: { animation: 'timing', config: { duration: 0 } }, // Disable animation
-          //   close: { animation: 'timing', config: { duration: 0 } },
-          // },
-        }}>
-        <Stack.Screen name='Splash' component={Splash} options={{ headerShown: false }} />
-        <Stack.Screen name='Login' component={Login} options={{ headerShown: false }} />
-        <Stack.Screen name='Signup' component={Signup} options={{ headerShown: false }} />
-        <Stack.Screen name='Dashboard' component={Dashboard} options={{ headerShown: false }} />
-        <Stack.Screen name='CreateGroup' component={CreateGroup} options={{ headerShown: false }} />
-        <Stack.Screen name='Group' component={Group} options={{ headerShown: false }} />
-        <Stack.Screen name='GroupSettings' component={GroupSettings} options={{ headerShown: false }} />
-        <Stack.Screen name='EditGroup' component={EditGroup} options={{ headerShown: false }} />
-        <Stack.Screen name='CreatePayment' component={CreatePayment} options={{ headerShown: false }} />
-        <Stack.Screen name='Profile' component={Profile} options={{ headerShown: false }} />
-      </Stack.Navigator>
-    </NavigationContainer>
+      <ToastProvider>
+        <UserProvider>
+          <Stack.Navigator initialRouteName='Splash'
+            screenOptions={{
+              headerShown: false,
+              presentation: 'transparentModal'
+              // transitionSpec: {
+              //   open: { animation: 'timing', config: { duration: 0 } }, // Disable animation
+              //   close: { animation: 'timing', config: { duration: 0 } },
+              // },
+            }}>
+            <Stack.Screen name='Splash' component={Splash} options={{ headerShown: false }} />
+            <Stack.Screen name='Login' component={Login} options={{ headerShown: false }} />
+            <Stack.Screen name='Signup' component={Signup} options={{ headerShown: false }} />
+            <Stack.Screen name='Dashboard' component={Dashboard} options={{ headerShown: false }} />
+            <Stack.Screen name='CreateGroup' component={CreateGroup} options={{ headerShown: false }} />
+            <Stack.Screen name='Group' component={Group} options={{ headerShown: false }} />
+            <Stack.Screen name='GroupSettings' component={GroupSettings} options={{ headerShown: false }} />
+            <Stack.Screen name='EditGroup' component={EditGroup} options={{ headerShown: false }} />
+            <Stack.Screen name='CreatePayment' component={CreatePayment} options={{ headerShown: false }} />
+            <Stack.Screen name='Profile' component={Profile} options={{ headerShown: false }} />
+          </Stack.Navigator>
+        </UserProvider>
+      </ToastProvider>
+    </NavigationContainer >
   );
 }
 

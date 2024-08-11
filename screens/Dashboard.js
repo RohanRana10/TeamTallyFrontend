@@ -1,13 +1,22 @@
-import { FlatList, Image, Modal, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
-import React, { useState } from 'react'
+import { ActivityIndicator, FlatList, Image, Modal, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import React, { useCallback, useContext, useEffect, useState } from 'react'
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import COLORS from '../constants/colors';
 import { AntDesign, Entypo, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import SPACING from '../constants/spacing';
 import RADIUS from '../constants/radius';
+import { UserContext } from '../context/userContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BASE_URL } from '../utils/APIConstants';
+import { useToast } from 'react-native-toast-notifications';
+import axios from 'axios';
+import { useFocusEffect } from '@react-navigation/native';
 
 
 export default function Dashboard({ navigation }) {
+
+    const context = useContext(UserContext);
+    const { user } = context;
     const [groups, setGroups] = useState([
         { id: '1', title: 'First Item' },
         { id: '2', title: 'Second Item' },
@@ -20,98 +29,166 @@ export default function Dashboard({ navigation }) {
         // { id: '9', title: 'Fifth Item' },
         // { id: '10', title: 'Fifth Item' },
     ]);
-
+    const toast = useToast();
     const [modalVisible, setModalVisible] = useState(false);
     const [joinGroupModalVisible, setJoinGroupModalVisible] = useState(false);
     const [joinMode, setJoinMode] = useState(false);
     const [groupCode, setGroupCode] = useState("");
+    const [screenLoading, setScreenLoading] = useState(false);
+    const [dashboardData, setDashboardData] = useState({});
 
     const toggleModal = () => {
         setModalVisible(!modalVisible);
         setJoinMode(false);
     };
 
+    const fetchDashboardDetails = async () => {
+        setScreenLoading(true);
+        let token = await AsyncStorage.getItem('authToken');
+        let url = `${BASE_URL}/screens/dashboard`
+        let config = {
+            method: 'get',
+            maxBodyLength: Infinity,
+            url: url,
+            headers: {
+                'auth-token': token
+            }
+        };
+        axios.request(config)
+            .then((response) => {
+                if (response.data.status.statusCode !== 1) {
+                    console.log(response.data.status.statusMessage);
+                    toast.show(response.data.status.statusMessage, {
+                        type: "normal",
+                        placement: "bottom",
+                        duration: 3000,
+                        offset: 50,
+                        animationType: "slide-in",
+                        swipeEnabled: false
+                    });
+                }
+                else {
+                    setScreenLoading(false);
+                    setDashboardData(response.data.data);
+                    console.log(JSON.stringify(response.data.status.statusMessage));
+                }
+
+            })
+            .catch((error) => {
+                console.log(error);
+            });
+    }
+
+    // useEffect(() => {
+    //     // console.log(user.image);
+    //     fetchDashboardDetails();
+    // }, [])
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchDashboardDetails();
+        }, [])
+    );
+
+
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
             <StatusBar barStyle={'light-content'} backgroundColor={'#000000'} />
-            <View style={{ width: wp(100), height: hp(10), alignItems: 'center', flexDirection: 'row', justifyContent: 'center', marginBottom: hp(1) }}>
-                <View style={{ width: wp(90), justifyContent: 'space-between', alignItems: 'center', flexDirection: 'row' }}>
-                    <Text style={{ fontFamily: 'Pacifico-Regular', fontSize: hp(4), color: COLORS.textHighlight }}>
-                        TeamTally
-                    </Text>
-                    <View style={{ width: wp(20), justifyContent: 'space-between', flexDirection: 'row', alignItems: 'center' }}>
-
-                        <TouchableOpacity onPress={() => console.log("Search button pressed")}>
-                            <Ionicons name="search" size={hp(3.2)} color={COLORS.textHighlight} />
-                        </TouchableOpacity>
-
-                        <TouchableOpacity onPress={() => navigation.navigate('Profile', { url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" })}>
-                            <Image source={{ uri: "https://res.cloudinary.com/dyhwcqnzl/image/upload/v1721803893/cjgpyrqtry0debrehlkd.png" }} style={{ width: hp(4.5), height: hp(4.5), borderRadius: hp(100) }} />
-                        </TouchableOpacity>
+            {screenLoading ?
+                <>
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                        <ActivityIndicator size={'large'} color={COLORS.textHighlight} />
                     </View>
-                </View>
+                </> : <>
+                    <View style={{ width: wp(100), height: hp(10), alignItems: 'center', flexDirection: 'row', justifyContent: 'center', marginBottom: hp(1) }}>
+                        <View style={{ width: wp(90), justifyContent: 'space-between', alignItems: 'center', flexDirection: 'row' }}>
+                            <Text style={{ fontFamily: 'Pacifico-Regular', fontSize: hp(4), color: COLORS.textHighlight }}>
+                                TeamTally
+                            </Text>
+                            <View style={{ width: wp(20), justifyContent: 'space-between', flexDirection: 'row', alignItems: 'center' }}>
 
-            </View>
+                                <TouchableOpacity onPress={() => console.log("Search button pressed")}>
+                                    <Ionicons name="search" size={hp(3.2)} color={COLORS.textHighlight} />
+                                </TouchableOpacity>
 
-            <View style={{ width: wp(90), alignSelf: 'center', marginBottom: hp(1) }}>
-                <Text style={{ color: COLORS.textBase, fontFamily: 'Outfit-SemiBold', fontSize: hp(3) }}>
-                    Your Groups
-                </Text>
-            </View>
+                                <TouchableOpacity onPress={() => navigation.navigate('Profile', { url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" })}>
+                                    <Image source={{ uri: dashboardData?.userImage ? dashboardData?.userImage : "https://res.cloudinary.com/dyhwcqnzl/image/upload/v1721803893/cjgpyrqtry0debrehlkd.png" }} style={{ width: hp(4.5), height: hp(4.5), borderRadius: hp(100) }} />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
 
-            <View style={{ width: wp(100), height: hp(78), backgroundColor: 'black' }}>
-                {/* <ScrollView contentContainerStyle={{ gap: SPACING.M, paddingBottom: hp(10) }}> */}
+                    </View>
 
-                {groups.length === 0 ?
-                    <>
-                        <View style={{ width: wp(100), height: hp(65), justifyContent: 'center', alignItems: 'center' }}>
-                            <Image source={require('../assets/groupImage.png')} style={{ width: hp(8), height: hp(8), marginBottom: hp(1) }} />
-                            <Text style={{ color: COLORS.textDarker, fontFamily: 'Outfit-Regular', fontSize: hp(1.8) }}>
-                                No groups found!
+                    <View style={{ width: wp(90), alignSelf: 'center', marginBottom: hp(1) }}>
+                        <Text style={{ color: COLORS.textBase, fontFamily: 'Outfit-SemiBold', fontSize: hp(3) }}>
+                            Your Groups
+                        </Text>
+                    </View>
+
+                    <View style={{ width: wp(100), height: hp(78), backgroundColor: 'black' }}>
+                        {/* <ScrollView contentContainerStyle={{ gap: SPACING.M, paddingBottom: hp(10) }}> */}
+
+                        {dashboardData?.groups?.length === 0 ?
+                            <>
+                                <View style={{ width: wp(100), height: hp(65), justifyContent: 'center', alignItems: 'center' }}>
+                                    <Image source={require('../assets/groupImage.png')} style={{ width: hp(8), height: hp(8), marginBottom: hp(1) }} />
+                                    <Text style={{ color: COLORS.textDarker, fontFamily: 'Outfit-Regular', fontSize: hp(1.8) }}>
+                                        No groups found!
+                                    </Text>
+                                </View>
+                            </> :
+                            <>
+                                <FlatList
+                                    data={dashboardData.groups}
+                                    contentContainerStyle={{ gap: SPACING.L, paddingBottom: hp(15) }}
+                                    keyExtractor={item => item.groupDetails._id}
+                                    renderItem={({ item }) => (
+                                        <TouchableOpacity onPress={() => navigation.navigate('Group')} style={{ width: wp(90), alignSelf: 'center', justifyContent: 'center' }}>
+                                            <View style={{ flexDirection: 'row', gap: SPACING.SM, alignItems: 'center' }}>
+                                                <Image source={{ uri: "https://res.cloudinary.com/dyhwcqnzl/image/upload/v1722065408/Team_of_business_people_putting_hands_up_together_nmiq6a.jpg" }} style={{ width: hp(15), height: hp(12), borderRadius: RADIUS.S }} />
+                                                <View style={{ gap: SPACING.XS }}>
+                                                    <Text style={{ color: COLORS.textDarker, fontFamily: 'Outfit-SemiBold', fontSize: hp(2.4) }}>
+                                                        {item.groupDetails.name}
+                                                    </Text>
+                                                    {item.totalSpends === 0 ?
+                                                        <Text style={{ fontFamily: 'Outfit-Regular', fontSize: hp(2.0), color: COLORS.success }}>
+                                                            No settlements required!
+                                                        </Text> :
+                                                        <Text style={{ fontFamily: 'Outfit-Regular', fontSize: hp(2.0), color: item.totalSpends < 0 ? COLORS.danger : COLORS.success }}>
+                                                            {item.totalSpends < 0 ? `You owe ₹${item.totalSpends * -1}` : `You get back ₹${item.totalSpends}`}
+                                                        </Text>}
+                                                    <View style={{ gap: SPACING.XS }}>
+                                                        {item?.settlements?.map((settlement) => {
+                                                            return <Text key={settlement.id} style={{ color: COLORS.textBase, fontFamily: 'Outfit-Regular', fontSize: hp(1.6) }}>
+                                                                {settlement.amount < 0 ? `You owe ${settlement.name}` : `${settlement.name} owes you`} <Text style={{ color: settlement.amount < 0 ? COLORS.danger : COLORS.success }}> ₹{settlement.amount < 0 ? settlement.amount * -1 : settlement.amount}</Text>
+                                                            </Text>
+                                                        })}
+                                                        {/* <Text style={{ color: COLORS.textBase, fontFamily: 'Outfit-Regular', fontSize: hp(1.6) }}>
+                                                            Saptorshi owes you <Text style={{ color: COLORS.success }}>₹2465.90</Text>
+                                                        </Text>
+                                                        <Text style={{ color: COLORS.textBase, fontFamily: 'Outfit-Regular', fontSize: hp(1.6) }}>
+                                                            You owe Amit <Text style={{ color: COLORS.danger }}>₹2465.90</Text>
+                                                        </Text> */}
+                                                    </View>
+                                                </View>
+                                            </View>
+                                        </TouchableOpacity>
+                                    )}
+                                />
+                            </>}
+                        {/* </ScrollView> */}
+                    </View>
+
+                    <TouchableOpacity onPress={toggleModal} style={{ height: hp(6), backgroundColor: COLORS.bgHighlight, position: 'absolute', bottom: hp(5), right: wp(5), justifyContent: 'center', alignItems: 'center', paddingHorizontal: SPACING.M, borderRadius: RADIUS.XS }}>
+                        <View style={{ flexDirection: 'row', gap: SPACING.XS, alignItems: 'center' }}>
+                            <Entypo name="plus" size={hp(3)} color={COLORS.black} />
+                            <Text style={{ fontFamily: 'Outfit-Bold', fontSize: hp(2.1) }}>
+                                New Group
                             </Text>
                         </View>
-                    </> :
-                    <>
-                        <FlatList
-                            data={groups}
-                            contentContainerStyle={{ gap: SPACING.L, paddingBottom: hp(15) }}
-                            keyExtractor={item => item.id}
-                            renderItem={({ item }) => (
-                                <TouchableOpacity onPress={() => navigation.navigate('Group')} style={{ width: wp(90), alignSelf: 'center', justifyContent: 'center' }}>
-                                    <View style={{ flexDirection: 'row', gap: SPACING.SM, alignItems: 'center' }}>
-                                        <Image source={{ uri: "https://res.cloudinary.com/dyhwcqnzl/image/upload/v1722065408/Team_of_business_people_putting_hands_up_together_nmiq6a.jpg" }} style={{ width: hp(15), height: hp(12), borderRadius: RADIUS.S }} />
-                                        <View style={{ gap: SPACING.XS }}>
-                                            <Text style={{ color: COLORS.textDarker, fontFamily: 'Outfit-SemiBold', fontSize: hp(2.4) }}>
-                                                Dharamshala
-                                            </Text>
-                                            <Text style={{ fontFamily: 'Outfit-Regular', fontSize: hp(2.0), color: COLORS.danger }}>
-                                                You owe ₹2465.90
-                                            </Text>
-                                            <View style={{ gap: SPACING.XS }}>
-                                                <Text style={{ color: COLORS.textBase, fontFamily: 'Outfit-Regular', fontSize: hp(1.6) }}>
-                                                    Saptorshi owes you <Text style={{ color: COLORS.success }}>₹2465.90</Text>
-                                                </Text>
-                                                <Text style={{ color: COLORS.textBase, fontFamily: 'Outfit-Regular', fontSize: hp(1.6) }}>
-                                                    You owe Amit <Text style={{ color: COLORS.danger }}>₹2465.90</Text>
-                                                </Text>
-                                            </View>
-                                        </View>
-                                    </View>
-                                </TouchableOpacity>
-                            )}
-                        />
-                    </>}
-                {/* </ScrollView> */}
-            </View>
+                    </TouchableOpacity>
 
-            <TouchableOpacity onPress={toggleModal} style={{ height: hp(6), backgroundColor: COLORS.bgHighlight, position: 'absolute', bottom: hp(5), right: wp(5), justifyContent: 'center', alignItems: 'center', paddingHorizontal: SPACING.M, borderRadius: RADIUS.XS }}>
-                <View style={{ flexDirection: 'row', gap: SPACING.XS, alignItems: 'center' }}>
-                    <Entypo name="plus" size={hp(3)} color={COLORS.black} />
-                    <Text style={{ fontFamily: 'Outfit-Bold', fontSize: hp(2.1) }}>
-                        New Group
-                    </Text>
-                </View>
-            </TouchableOpacity>
+                </>}
 
             <Modal
                 transparent={true}

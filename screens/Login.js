@@ -1,22 +1,28 @@
-import { KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
-import React, { useState } from 'react'
+import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import React, { useContext, useState } from 'react'
 import COLORS from '../constants/colors';
 import SPACING from '../constants/spacing';
 import RADIUS from '../constants/radius';
 import { useFonts } from 'expo-font';
 import { useNavigation } from '@react-navigation/native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
-import { AntDesign, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { AntDesign, Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { BASE_URL } from '../utils/APIConstants';
+import axios from 'axios';
+import { UserContext } from '../context/userContext';
+import { useToast } from 'react-native-toast-notifications';
 
 
 export default function Login() {
-
+    const context = useContext(UserContext);
+    const { saveUserData, saveUserToken } = context;
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [passwordVisible, setPassworVisible] = useState(false);
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
     const navigation = useNavigation();
+    const toast = useToast();
 
     let [fontsLoaded] = useFonts({
         "Outfit-Regular": require('../assets/fonts/Outfit-Regular.ttf'),
@@ -25,9 +31,87 @@ export default function Login() {
         "Outfit-Medium": require('../assets/fonts/Outfit-Medium.ttf'),
     });
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    const validateForm = () => {
+        let errors = {};
+        if (!email) {
+            errors.email = "Email is required!";
+        }
+        else if (!emailRegex.test(email)) {
+            errors.email = "Email is required!";
+        }
+        if (!password) {
+            errors.password = "Password is required!";
+        }
+        if (password.length < 6) {
+            errors.password = "Password should be atleast 6 characters!";
+        }
+
+        setErrors(errors);
+        return Object.keys(errors).length === 0;
+    }
+
+    const login = () => {
+        setLoading(true);
+        let url = `${BASE_URL}/auth/login`;
+        let data = JSON.stringify({
+            "email": email,
+            "password": password
+        });
+
+        let config = {
+            method: 'post',
+            maxBodyLength: Infinity,
+            url: url,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            data: data
+        };
+
+        axios.request(config)
+            .then((response) => {
+                if (response.data.status.statusCode !== 1) {
+                    setLoading(false);
+                    console.log(response.data.status.statusMessage);
+                    toast.show(response.data.status.statusMessage, {
+                        type: "normal",
+                        placement: "bottom",
+                        duration: 3000,
+                        offset: 50,
+                        animationType: "slide-in",
+                        swipeEnabled: false
+                    });
+                }
+                else {
+                    setLoading(false);
+                    saveUserToken(response.data.data.authToken);
+                    saveUserData(response.data.data.user);
+                    navigation.replace('Dashboard');
+                    console.log(JSON.stringify(response.data.status.statusMessage));
+                }
+
+            })
+            .catch((error) => {
+                setLoading(false);
+                console.log("error", error);
+            });
+    }
+
+    const handleLogin = () => {
+        if (validateForm()) {
+            Keyboard.dismiss();
+            login();
+            setErrors({});
+        }
+    }
+
     if (!fontsLoaded) {
         return null;
     }
+
+
     return (
         <SafeAreaView style={{ flex: 1 }}>
             <KeyboardAvoidingView enabled behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0} style={{ backgroundColor: COLORS.background, flex: 1 }}>
@@ -104,7 +188,7 @@ export default function Login() {
                                     <View>
                                         <ActivityIndicator size={'large'} color={COLORS.textHighlight} />
                                     </View> :
-                                    <TouchableOpacity onPress={() => { console.log("TODO: login API call"); navigation.navigate('Dashboard') }} style={{ width: wp(90), height: hp(5.41), backgroundColor: COLORS.bgHighlight, paddingHorizontal: hp(2), paddingVertical: hp(1.3), gap: SPACING.S, borderRadius: RADIUS.S }}>
+                                    <TouchableOpacity onPress={handleLogin} style={{ width: wp(90), height: hp(5.41), backgroundColor: COLORS.bgHighlight, paddingHorizontal: hp(2), paddingVertical: hp(1.3), gap: SPACING.S, borderRadius: RADIUS.S }}>
                                         <Text style={{ alignSelf: 'center', fontSize: hp(2.1), fontWeight: '400', color: COLORS.black, fontFamily: 'Outfit-Bold' }}>
                                             Login
                                         </Text>

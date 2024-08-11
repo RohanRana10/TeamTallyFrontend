@@ -1,14 +1,21 @@
-import { KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
-import React, { useState } from 'react'
+import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import React, { useContext, useState } from 'react'
 import COLORS from '../constants/colors';
 import SPACING from '../constants/spacing';
 import RADIUS from '../constants/radius';
 import { useFonts } from 'expo-font';
 import { useNavigation } from '@react-navigation/native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
-import { AntDesign, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { AntDesign, Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { BASE_URL } from '../utils/APIConstants';
+import axios from 'axios';
+import { useToast } from 'react-native-toast-notifications';
+import { UserContext } from '../context/userContext';
 
 export default function Signup() {
+
+    const context = useContext(UserContext);
+    const { saveUserData, saveUserToken } = context;
     const [email, setEmail] = useState("");
     const [name, setName] = useState("");
     const [password, setPassword] = useState("");
@@ -18,6 +25,7 @@ export default function Signup() {
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
     const navigation = useNavigation();
+    const toast = useToast();
 
     let [fontsLoaded] = useFonts({
         "Outfit-Regular": require('../assets/fonts/Outfit-Regular.ttf'),
@@ -25,6 +33,104 @@ export default function Signup() {
         "Outfit-Bold": require('../assets/fonts/Outfit-Bold.ttf'),
         "Outfit-Medium": require('../assets/fonts/Outfit-Medium.ttf'),
     });
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    const validateForm = () => {
+        let errors = {};
+        if (!name) {
+            errors.name = "Full name is required!"
+        }
+        if (!email) {
+            errors.email = "Email is required!";
+        }
+        else if (!emailRegex.test(email)) {
+            errors.email = "Invalid Email!";
+        }
+        if (!password) {
+            errors.password = "Password is required!";
+        }
+        if (password.length < 6) {
+            errors.password = "Password should be atleast 6 characters!";
+        }
+        if (!confirmPassword) {
+            errors.confirmPassword = "Password confirmation is required!";
+        }
+
+        setErrors(errors);
+        return Object.keys(errors).length === 0;
+    }
+
+    const signup = () => {
+        setLoading(true);
+        let url = `${BASE_URL}/auth/create`
+        let data = JSON.stringify({
+            "name": name,
+            "email": email,
+            "password": password,
+            "cpassword": confirmPassword
+        });
+
+        let config = {
+            method: 'post',
+            maxBodyLength: Infinity,
+            url: url,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            data: data
+        };
+
+        axios.request(config)
+            .then((response) => {
+                if (response.data.status.statusCode !== 1) {
+                    setLoading(false);
+                    console.log(response.data.status.statusMessage);
+                    toast.show(response.data.status.statusMessage, {
+                        type: "normal",
+                        placement: "bottom",
+                        duration: 3000,
+                        offset: 50,
+                        animationType: "slide-in",
+                        swipeEnabled: false
+                    });
+                }
+                else {
+                    setLoading(false);
+                    saveUserToken(response.data.data.authToken);
+                    saveUserData(response.data.data.user);
+                    navigation.replace('Dashboard');
+                    toast.show(response.data.status.statusMessage, {
+                        type: "normal",
+                        placement: "bottom",
+                        duration: 3000,
+                        offset: 50,
+                        animationType: "slide-in",
+                        swipeEnabled: false
+                    });
+                    console.log(response.data.status.statusMessage);
+                }
+            })
+            .catch((error) => {
+                console.log(error);
+                toast.show("Some Error Occured!", {
+                    type: "normal",
+                    placement: "bottom",
+                    duration: 3000,
+                    offset: 50,
+                    animationType: "slide-in",
+                    swipeEnabled: false
+                });
+            });
+    }
+
+    const handleSignup = () => {
+        if (validateForm()) {
+            Keyboard.dismiss();
+            signup();
+            setErrors({});
+        }
+    }
 
     if (!fontsLoaded) {
         return null;
@@ -69,8 +175,13 @@ export default function Signup() {
                                         </View>
                                     </View>
 
+                                    {errors.name && <View style={{ flexDirection: 'row', gap: SPACING.S, alignItems: 'center' }}>
+                                        <Feather name="alert-circle" size={hp(2)} color="red" />
+                                        <Text style={{ color: 'red', fontSize: hp(1.7), fontFamily: 'Outfit-Regular' }}>{errors.name}</Text>
+                                    </View>}
+
                                     <View style={{ width: wp(90), height: hp(9.1), gap: SPACING.S }}>
-                                        <Text style={{ color: COLORS.textDarker, fontSize: hp(1.8),  fontFamily: 'Outfit-Regular' }}>
+                                        <Text style={{ color: COLORS.textDarker, fontSize: hp(1.8), fontFamily: 'Outfit-Regular' }}>
                                             Email
                                         </Text>
                                         <View style={{ width: wp(90), height: hp(5.54), borderRadius: RADIUS.S, padding: SPACING.S, gap: SPACING.S, backgroundColor: COLORS.bgSurfaceLighter, flexDirection: 'row', alignItems: 'center' }}>
@@ -88,6 +199,10 @@ export default function Signup() {
                                         </View>
                                     </View>
 
+                                    {errors.email && <View style={{ flexDirection: 'row', gap: SPACING.S, alignItems: 'center' }}>
+                                        <Feather name="alert-circle" size={hp(2)} color="red" />
+                                        <Text style={{ color: 'red', fontSize: hp(1.7), fontFamily: 'Outfit-Regular' }}>{errors.email}</Text>
+                                    </View>}
 
 
                                     <View style={{ width: wp(90), height: hp(9.1), gap: SPACING.S }}>
@@ -115,6 +230,11 @@ export default function Signup() {
                                         </View>
                                     </View>
 
+                                    {errors.password && <View style={{ flexDirection: 'row', gap: SPACING.S, alignItems: 'center' }}>
+                                        <Feather name="alert-circle" size={hp(2)} color="red" />
+                                        <Text style={{ color: 'red', fontSize: hp(1.7), fontFamily: 'Outfit-Regular' }}>{errors.password}</Text>
+                                    </View>}
+
                                     <View style={{ width: wp(90), height: hp(9.1), gap: SPACING.S }}>
                                         <Text style={{ color: COLORS.textDarker, fontSize: hp(1.8), fontFamily: 'Outfit-Regular' }}>
                                             Confirm Password
@@ -140,9 +260,9 @@ export default function Signup() {
                                         </View>
                                     </View>
 
-                                    {(errors.email || errors.password) && <View style={{ flexDirection: 'row', gap: SPACING.S, alignItems: 'center' }}>
+                                    {errors.confirmPassword && <View style={{ flexDirection: 'row', gap: SPACING.S, alignItems: 'center' }}>
                                         <Feather name="alert-circle" size={hp(2)} color="red" />
-                                        <Text style={{ color: 'red', fontSize: hp(1.7), fontFamily: 'Outfit-Regular' }}>Invalid Email or Password</Text>
+                                        <Text style={{ color: 'red', fontSize: hp(1.7), fontFamily: 'Outfit-Regular' }}>{errors.confirmPassword}</Text>
                                     </View>}
 
                                 </View>
@@ -151,7 +271,7 @@ export default function Signup() {
                                     <View>
                                         <ActivityIndicator size={'large'} color={COLORS.textHighlight} />
                                     </View> :
-                                    <TouchableOpacity onPress={() => { console.log("TODO: signup API call"); navigation.navigate('Dashboard') }} style={{ width: wp(90), height: hp(5.41), backgroundColor: COLORS.bgHighlight, paddingHorizontal: hp(2), paddingVertical: hp(1.3), gap: SPACING.S, borderRadius: RADIUS.S }}>
+                                    <TouchableOpacity onPress={handleSignup} style={{ width: wp(90), height: hp(5.41), backgroundColor: COLORS.bgHighlight, paddingHorizontal: hp(2), paddingVertical: hp(1.3), gap: SPACING.S, borderRadius: RADIUS.S }}>
                                         <Text style={{ alignSelf: 'center', fontSize: hp(2.1), fontWeight: '400', color: COLORS.black, fontFamily: 'Outfit-Bold' }}>
                                             Signup
                                         </Text>
