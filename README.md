@@ -16,3 +16,7 @@ A mobile application that simplifies the process of splitting payments among gro
 - User authentication for secure access
 
 ## App Screenshots
+
+- Loading Screen  
+
+![TMS HOME PAGE](https://i.postimg.cc/BQLH7TsH/home-page.png)  
