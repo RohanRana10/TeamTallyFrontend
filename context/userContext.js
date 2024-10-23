@@ -25,6 +25,17 @@ const UserProvider = ({ children }) => {
         }
     }
 
+    const saveUserId = async (id) => {
+        try {
+            await AsyncStorage.setItem('userId', id);
+            // setAuthToken(token);
+            console.log("id saved");
+        } catch (e) {
+            console.log(e);
+        }
+    }
+
+
 
     const deleteUserToken = async (token) => {
         try {
@@ -36,7 +47,7 @@ const UserProvider = ({ children }) => {
     }
 
     return (
-        <UserContext.Provider value={{ user, authToken, saveUserData, removeUserData, saveUserToken, deleteUserToken }}>
+        <UserContext.Provider value={{ user, authToken, saveUserData, removeUserData, saveUserToken, deleteUserToken, saveUserId }}>
             {children}
         </UserContext.Provider>
     )

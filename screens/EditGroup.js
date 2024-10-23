@@ -1,24 +1,41 @@
-import { Image, SafeAreaView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
-import React, { useState } from 'react'
+import { ActivityIndicator, Image, Keyboard, SafeAreaView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import React, { useState, useEffect } from 'react'
 import COLORS from '../constants/colors';
-import { Entypo, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { Entypo, Feather, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import SPACING from '../constants/spacing';
 import { Dropdown } from 'react-native-element-dropdown';
 import RADIUS from '../constants/radius';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import * as ImagePicker from 'expo-image-picker';
+import { useToast } from 'react-native-toast-notifications';
+import { BASE_URL } from '../utils/APIConstants';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function EditGroup({ navigation }) {
-    const [title, setTitle] = useState("Dharmashala");
-    const [type, setType] = useState("friend");
+export default function EditGroup({ navigation, route }) {
+    const { groupData } = route.params;
+    const [title, setTitle] = useState("");
+    const [errors, setErrors] = useState({});
+    const [loading, setLoading] = useState(false);
+    const [type, setType] = useState("other");
+    const [manualImageChange, setManualImageChange] = useState(false);
+    const [photoUploading, setPhotoUploading] = useState(false);
     const [imageUrl, setImageUrl] = useState("https://res.cloudinary.com/dyhwcqnzl/image/upload/v1722065408/Team_of_business_people_putting_hands_up_together_nmiq6a.jpg");
+    const toast = useToast();
 
     const typeData = [
-        { label: 'Friends', value: 'friend' },
-        { label: 'Couple', value: 'couple' },
-        { label: 'Home', value: 'home' },
-        { label: 'Others', value: 'other' },
+        { label: 'Friends', value: 'Friends', image: "https://res.cloudinary.com/dyhwcqnzl/image/upload/v1722065408/Team_of_business_people_putting_hands_up_together_nmiq6a.jpg" },
+        { label: 'Couple', value: 'Couple', image: "https://res.cloudinary.com/dyhwcqnzl/image/upload/v1722775241/4366052_mxldlz.jpg" },
+        { label: 'Home', value: 'Home', image: "https://res.cloudinary.com/dyhwcqnzl/image/upload/v1722775136/20945135_inalal.jpg" },
+        { label: 'Others', value: 'Others', image: "https://res.cloudinary.com/dyhwcqnzl/image/upload/v1722775103/2691166_okzcvk.jpg" },
     ];
+
+    // const typeData = [
+    //     { label: 'Friends', value: 'Friends' },
+    //     { label: 'Couple', value: 'Couple' },
+    //     { label: 'Home', value: 'Home' },
+    //     { label: 'Others', value: 'Others' },
+    // ];
 
     const uploadImage = async () => {
         let result = {};
@@ -32,12 +49,85 @@ export default function EditGroup({ navigation }) {
             });
             if (!result.canceled) {
                 console.log(result);
-                setImageUrl(result.assets[0].uri);
+                // setImageUrl(result.assets[0].uri);
+                sendImageToBackend(result.assets[0])
             } else {
                 console.log("upload cancelled")
             }
         } catch (error) {
             console.log("Error uploading image");
+        }
+    }
+
+    const sendImageToBackend = (imageInfo) => {
+        setPhotoUploading(true);
+        setLoading(true);
+        let data = new FormData();
+        // console.log("hehe",imageInfo);
+        data.append("image", {
+            uri: imageInfo.uri,
+            type: imageInfo.mimeType,
+            name: imageInfo.fileName
+        })
+        let url = `${BASE_URL}/auth/get-image-url`
+        let config = {
+            method: 'post',
+            maxBodyLength: Infinity,
+            url: url,
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+            data: data
+        };
+
+        axios.request(config)
+            .then((response) => {
+                if (response.data.status.statusCode !== 1) {
+                    setPhotoUploading(false);
+                    setLoading(false);
+                    console.log(response.data.status.statusMessage);
+                    toast.show(response.data.status.statusMessage, {
+                        type: "normal",
+                        placement: "bottom",
+                        duration: 3000,
+                        offset: 50,
+                        animationType: "slide-in",
+                        swipeEnabled: false
+                    });
+                }
+                else {
+                    setPhotoUploading(false);
+                    setLoading(false);
+                    console.log(JSON.stringify(response.data.status.statusMessage));
+                    setImageUrl(toHttps(response.data.data));
+                    setManualImageChange(true);
+                }
+
+            })
+            .catch((error) => {
+                console.log(error);
+                setPhotoUploading(false);
+                setLoading(false);
+                toast.show("Internal server error!", {
+                    type: "normal",
+                    placement: "bottom",
+                    duration: 3000,
+                    offset: 50,
+                    animationType: "slide-in",
+                    swipeEnabled: false
+                });
+            });
+    }
+
+    const checkImageUrl = (url) => {
+        // if (url == "https://res.cloudinary.com/dyhwcqnzl/image/upload/v1722065408/Team_of_business_people_putting_hands_up_together_nmiq6a.jpg"
+        //     || url == "https://res.cloudinary.com/dyhwcqnzl/image/upload/v1722775241/4366052_mxldlz.jpg"
+        //     || url == "https://res.cloudinary.com/dyhwcqnzl/image/upload/v1722775136/20945135_inalal.jpg" 
+        //     || url == "https://res.cloudinary.com/dyhwcqnzl/image/upload/v1722775103/2691166_okzcvk.jpg"){
+
+        //     }
+        if (!manualImageChange) {
+            setImageUrl(toHttps(url));
         }
     }
 
@@ -48,6 +138,115 @@ export default function EditGroup({ navigation }) {
             </View>
         );
     }
+
+    const validateForm = () => {
+        let errors = {};
+        if (!title) {
+            errors.title = "Title is required!"
+        }
+        if (!type) {
+            errors.type = "Type is required!"
+        }
+        if (title.length == 0) {
+            errors.title = "Title cannot be empty!"
+        }
+        setErrors(errors);
+        return Object.keys(errors).length === 0;
+    }
+
+    const toHttps = (url) => {
+        // Check if the URL starts with 'http://'
+        if (url.startsWith('http://')) {
+            // Replace 'http://' with 'https://'
+            return url.replace('http://', 'https://');
+        }
+        // Return the original URL if it doesn't start with 'http://'
+        return url;
+    }
+
+    const updateGroup = async () => {
+        // console.log({ name: title, type: type, image: imageUrl, groupId: groupData.group._id })
+        setLoading(true);
+        let url = `${BASE_URL}/groups/update-group`
+        let token = await AsyncStorage.getItem('authToken');
+        let data = JSON.stringify({
+            "name": title,
+            "image": imageUrl,
+            "type": type,
+            groupId: groupData.group._id
+        });
+
+        let config = {
+            method: 'post',
+            maxBodyLength: Infinity,
+            url: url,
+            headers: {
+                'auth-token': token,
+                'Content-Type': 'application/json'
+            },
+            data: data
+        };
+
+        axios.request(config)
+            .then((response) => {
+                if (response.data.status.statusCode !== 1) {
+                    setLoading(false);
+                    console.log(response.data.status.statusMessage);
+                    toast.show(response.data.status.statusMessage, {
+                        type: "normal",
+                        placement: "bottom",
+                        duration: 3000,
+                        offset: 50,
+                        animationType: "slide-in",
+                        swipeEnabled: false
+                    });
+                }
+                else {
+                    console.log(response.data.status.statusMessage);
+                    toast.show(response.data.status.statusMessage, {
+                        type: "normal",
+                        placement: "bottom",
+                        duration: 3000,
+                        offset: 50,
+                        animationType: "slide-in",
+                        swipeEnabled: false
+                    });
+                    // navigation.replace('Dashboard');
+                    navigation.navigate('Group', { groupId: groupData.group._id });
+                }
+            })
+            .catch((error) => {
+                setLoading(false);
+                console.log(error);
+                toast.show("Internal server error!", {
+                    type: "normal",
+                    placement: "bottom",
+                    duration: 3000,
+                    offset: 50,
+                    animationType: "slide-in",
+                    swipeEnabled: false
+                });
+            });
+    }
+
+    const handleEditGroup = () => {
+        if (validateForm()) {
+            Keyboard.dismiss();
+            updateGroup();
+            setErrors({});
+        }
+    }
+
+    useEffect(() => {
+        console.log(groupData)
+        setImageUrl(toHttps(groupData.group.image));
+        setTitle(groupData.group.name);
+        setType(groupData.group.type);
+        if (groupData.group.image) {
+            setManualImageChange(true);
+        }
+    }, [])
+
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
             <StatusBar barStyle={'light-content'} backgroundColor={'#000000'} />
@@ -62,10 +261,11 @@ export default function EditGroup({ navigation }) {
                 </Text>
             </View>
 
+
             <View style={{ alignSelf: 'center', borderRadius: hp(100) }}>
                 <Image source={{ uri: imageUrl }} style={{ width: hp(20), height: hp(20), borderRadius: hp(100) }} />
-                <TouchableOpacity onPress={uploadImage} style={{ width: hp(6), height: hp(6), backgroundColor: COLORS.bgHighlight, borderRadius: hp(100), position: 'absolute', alignItems: 'center', justifyContent: 'center', bottom: hp(-1), right: 0 }}>
-                    <Entypo name="camera" size={hp(2.5)} color={COLORS.black} />
+                <TouchableOpacity disabled={photoUploading} onPress={uploadImage} style={{ width: hp(6), height: hp(6), backgroundColor: COLORS.bgHighlight, borderRadius: hp(100), position: 'absolute', alignItems: 'center', justifyContent: 'center', bottom: hp(-1), right: 0 }}>
+                    {photoUploading ? <ActivityIndicator size={'small'} color={'black'} /> : <Entypo name="camera" size={hp(2.5)} color={COLORS.black} />}
                 </TouchableOpacity>
             </View>
 
@@ -88,6 +288,12 @@ export default function EditGroup({ navigation }) {
                         />
                     </View>
                 </View>
+
+                {errors.title && <View style={{ flexDirection: 'row', gap: SPACING.S, alignItems: 'center', width: wp(90) }}>
+                    <Feather name="alert-circle" size={hp(2)} color="red" />
+                    <Text style={{ color: 'red', fontSize: hp(1.7), fontFamily: 'Outfit-Regular' }}>{errors.title}</Text>
+                </View>}
+
                 <View style={{ gap: SPACING.S }}>
                     <Text style={{ color: COLORS.textDarker, fontWeight: '400', width: wp(23), height: hp(2.5), fontSize: hp(1.8), lineHeight: hp(2.8), fontFamily: 'Outfit-Regular' }}>
                         Group Type
@@ -111,20 +317,31 @@ export default function EditGroup({ navigation }) {
                             value={type}
                             onChange={item => {
                                 setType(item.value);
+                                checkImageUrl(item.image);
                             }}
                             containerStyle={styles.containerStyle}
                             renderItem={renderItem}
                         />
                     </View>
                 </View>
+
+                {errors.type && <View style={{ flexDirection: 'row', gap: SPACING.S, alignItems: 'center', width: wp(90) }}>
+                    <Feather name="alert-circle" size={hp(2)} color="red" />
+                    <Text style={{ color: 'red', fontSize: hp(1.7), fontFamily: 'Outfit-Regular' }}>{errors.type}</Text>
+                </View>}
             </View>
 
+            {loading ?
+                <View style={{ marginTop: hp(2) }}>
+                    <ActivityIndicator size={'large'} color={COLORS.textHighlight} />
+                </View> :
 
-            <TouchableOpacity style={{ backgroundColor: COLORS.bgHighlight, borderRadius: RADIUS.XS, width: wp(90), height: hp(5), alignSelf: 'center', alignItems: 'center', justifyContent: 'center', position: 'absolute', bottom: hp(5) }}>
-                <Text style={{ fontSize: hp(2.1), color: COLORS.black, fontFamily: 'Outfit-Bold' }}>
-                    Save Changes
-                </Text>
-            </TouchableOpacity>
+                <TouchableOpacity onPress={handleEditGroup} style={{ backgroundColor: COLORS.bgHighlight, borderRadius: RADIUS.XS, width: wp(90), height: hp(5), alignSelf: 'center', alignItems: 'center', justifyContent: 'center', marginTop: hp(5) }}>
+                    <Text style={{ fontSize: hp(2.1), color: COLORS.black, fontFamily: 'Outfit-Bold' }}>
+                        Save Changes
+                    </Text>
+                </TouchableOpacity>}
+
         </SafeAreaView>
     )
 }

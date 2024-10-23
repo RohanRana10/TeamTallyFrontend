@@ -1,7 +1,7 @@
 import { StyleSheet } from 'react-native';
 import Login from './screens/Login';
 import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
+// import { createStackNavigator } from '@react-navigation/stack';
 import Signup from './screens/Signup';
 import Splash from './screens/Splash';
 import { useFonts } from 'expo-font';
@@ -12,12 +12,13 @@ import GroupSettings from './screens/GroupSettings';
 import EditGroup from './screens/EditGroup';
 import CreatePayment from './screens/CreatePayment';
 import Profile from './screens/Profile';
-// import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { UserProvider } from './context/userContext';
 import { ToastProvider } from 'react-native-toast-notifications';
+import EditPayment from './screens/EditPayment';
 
-// const Stack = createNativeStackNavigator();
-const Stack = createStackNavigator();
+const Stack = createNativeStackNavigator();
+// const Stack = createStackNavigator();
 
 export default function App() {
 
@@ -55,6 +56,7 @@ export default function App() {
             <Stack.Screen name='GroupSettings' component={GroupSettings} options={{ headerShown: false }} />
             <Stack.Screen name='EditGroup' component={EditGroup} options={{ headerShown: false }} />
             <Stack.Screen name='CreatePayment' component={CreatePayment} options={{ headerShown: false }} />
+            <Stack.Screen name='EditPayment' component={EditPayment} options={{ headerShown: false }} />
             <Stack.Screen name='Profile' component={Profile} options={{ headerShown: false }} />
           </Stack.Navigator>
         </UserProvider>

@@ -19,6 +19,7 @@ export default function Splash() {
         if (authToken) {
             navigation.replace('Dashboard');
         } else {
+            console.log("navigated to login");
             navigation.replace('Login');
         }
         console.log("Available authToken : ", authToken);

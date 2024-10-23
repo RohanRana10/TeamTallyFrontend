@@ -11,8 +11,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useToast } from 'react-native-toast-notifications';
 import axios from 'axios';
 
-export default function CreatePayment({ route, navigation }) {
 
+export default function EditPayment({ route, navigation }) {
     const [description, setDescription] = useState("");
     const [payer, setPayer] = useState("");
     const [selected, setSelected] = useState([]);
@@ -21,9 +21,11 @@ export default function CreatePayment({ route, navigation }) {
     const [amount, setAmount] = useState("");
     const [errors, setErrors] = useState({});
     const toast = useToast();
+    const [userId, setUserId] = useState("");
     const [loading, setLoading] = useState(false);
+    const [deleteButtonLoading, setDeleteButtonLoading] = useState(false);
 
-    const { groupData } = route.params;
+    const { groupData, paymentData } = route.params;
 
     let payerData = [
         { label: 'Amit Pathania', value: '12' },
@@ -66,9 +68,10 @@ export default function CreatePayment({ route, navigation }) {
         return Object.keys(errors).length === 0;
     }
 
-    const handleCreatePayment = () => {
+    const handleEditPayment = () => {
         if (validateForm()) {
             console.log({
+                "paymentId": paymentData._id,
                 "payerId": payer,
                 "description": description,
                 "amount": amount,
@@ -76,16 +79,17 @@ export default function CreatePayment({ route, navigation }) {
                 "participants": selected
             })
             Keyboard.dismiss();
-            createPayment();
+            updatePayment();
             setErrors({});
         }
     }
 
-    const createPayment = async () => {
+    const updatePayment = async () => {
         setLoading(true);
-        let url = `${BASE_URL}/payments/create`
+        let url = `${BASE_URL}/payments/update`
         let token = await AsyncStorage.getItem('authToken');
         let data = JSON.stringify({
+            "paymentId": paymentData._id,
             "payerId": payer,
             "description": description,
             "amount": amount,
@@ -145,31 +149,123 @@ export default function CreatePayment({ route, navigation }) {
                 });
             });
     }
+    const getUserId = async () => {
+        let userId = await AsyncStorage.getItem('userId');
+        // console.log("userId", userId);
+        // console.log("group creator", groupData.group.creator);
+        // console.log("group creator", groupData.group.creator === userId);
+        setUserId(userId);
+    }
+
+    const deletePayment = async () => {
+        setLoading(true);
+        setDeleteButtonLoading(true);
+        let url = `${BASE_URL}/payments/delete`
+        let token = await AsyncStorage.getItem('authToken');
+        let data = JSON.stringify({
+            "paymentId": paymentData._id,
+            "groupId": groupData.group._id,
+        });
+
+        console.log(data);
+
+        let config = {
+            method: 'delete',
+            maxBodyLength: Infinity,
+            url: url,
+            headers: {
+                'auth-token': token,
+                'Content-Type': 'application/json'
+            },
+            data: data
+        };
+
+        axios.request(config)
+            .then((response) => {
+                if (response.data.status.statusCode !== 1) {
+                    setLoading(false);
+                    setDeleteButtonLoading(false);
+                    console.log(response.data.status.statusMessage);
+                    toast.show(response.data.status.statusMessage, {
+                        type: "normal",
+                        placement: "bottom",
+                        duration: 3000,
+                        offset: 50,
+                        animationType: "slide-in",
+                        swipeEnabled: false
+                    });
+                }
+                else {
+                    console.log(response.data.status.statusMessage);
+                    toast.show(response.data.status.statusMessage, {
+                        type: "normal",
+                        placement: "bottom",
+                        duration: 3000,
+                        offset: 50,
+                        animationType: "slide-in",
+                        swipeEnabled: false
+                    });
+                    // navigation.replace('Dashboard');
+                    navigation.goBack();
+                }
+            })
+            .catch((error) => {
+                setLoading(false);
+                setDeleteButtonLoading(false);
+                console.log(error);
+                toast.show("Internal server error!", {
+                    type: "normal",
+                    placement: "bottom",
+                    duration: 3000,
+                    offset: 50,
+                    animationType: "slide-in",
+                    swipeEnabled: false
+                });
+            });
+    }
 
     useEffect(() => {
-        // console.log("groupData", groupData.group.members);
+        // console.log("payment Data at edit", groupData);
         let updatedDropdownOptions = groupData.group.members.map((member) => {
             return { label: member.name, value: member._id }
         })
         console.log(updatedDropdownOptions);
         setDropdownOptions(updatedDropdownOptions);
         setPayerOptions(updatedDropdownOptions);
-
+        setPayer(paymentData?.payer?._id);
+        setSelected(paymentData.participants);
+        setDescription(paymentData.description)
+        setAmount(paymentData.amount.toString());
+        getUserId();
     }, [])
 
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
             <StatusBar barStyle={'light-content'} backgroundColor={'#000000'} />
-            <View style={{ width: wp(100), height: hp(10), alignItems: 'center', flexDirection: 'row', }}>
-                <View style={{ alignItems: 'flex-start', marginLeft: wp(5.33), }}>
-                    <TouchableOpacity onPress={() => navigation.goBack()} style={{ backgroundColor: COLORS.bgSurfaceLighter, width: hp(4), height: hp(4), justifyContent: 'center', alignItems: 'center', borderRadius: hp(10), }}>
-                        <Ionicons name="chevron-back-outline" size={hp(2.4)} color="white" />
-                    </TouchableOpacity>
+            <View style={{ width: wp(100), height: hp(10), alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' }}>
+                <View style={{ flexDirection: 'row' }}>
+                    <View style={{ alignItems: 'flex-start', marginLeft: wp(5.33), }}>
+                        <TouchableOpacity onPress={() => navigation.goBack()} style={{ backgroundColor: COLORS.bgSurfaceLighter, width: hp(4), height: hp(4), justifyContent: 'center', alignItems: 'center', borderRadius: hp(10), }}>
+                            <Ionicons name="chevron-back-outline" size={hp(2.4)} color="white" />
+                        </TouchableOpacity>
+                    </View>
+                    <Text style={{ color: COLORS.textHighlight, fontFamily: 'Outfit-SemiBold', fontSize: hp(2.5), alignSelf: 'center', marginLeft: hp(2) }}>
+                        Edit Expense
+                    </Text>
                 </View>
-                <Text style={{ color: COLORS.textHighlight, fontFamily: 'Outfit-SemiBold', fontSize: hp(2.5), alignSelf: 'center', marginLeft: hp(2) }}>
-                    New Expense
-                </Text>
+                {
+                    userId === groupData.group.creator._id &&
+                    <View style={{ marginRight: wp(5.33) }}>
+                        {deleteButtonLoading ?
+                            <ActivityIndicator size={'small'} color={COLORS.textHighlight} /> :
+                            <TouchableOpacity onPress={deletePayment}>
+                                <MaterialCommunityIcons name="delete-outline" size={24} color={COLORS.danger} style={{}} />
+                            </TouchableOpacity>
+                        }
+                    </View>
+
+                }
             </View>
 
             <View style={{ width: wp(100), alignItems: 'center', marginTop: hp(2), gap: SPACING.SM, height: hp(80) }}>
@@ -299,9 +395,9 @@ export default function CreatePayment({ route, navigation }) {
                     <View style={{ marginTop: hp(2) }}>
                         <ActivityIndicator size={'large'} color={COLORS.textHighlight} />
                     </View> :
-                    <TouchableOpacity onPress={handleCreatePayment} style={{ backgroundColor: COLORS.bgHighlight, borderRadius: RADIUS.XS, width: wp(90), height: hp(5), alignSelf: 'center', alignItems: 'center', justifyContent: 'center', marginTop: hp(5) }}>
+                    <TouchableOpacity onPress={handleEditPayment} style={{ backgroundColor: COLORS.bgHighlight, borderRadius: RADIUS.XS, width: wp(90), height: hp(5), alignSelf: 'center', alignItems: 'center', justifyContent: 'center', marginTop: hp(5) }}>
                         <Text style={{ fontSize: hp(2.1), color: COLORS.black, fontFamily: 'Outfit-Bold' }}>
-                            Create
+                            Save Changes
                         </Text>
                     </TouchableOpacity>
                 }

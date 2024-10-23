@@ -1,14 +1,15 @@
 import { Image, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import COLORS from '../constants/colors'
 import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import RADIUS from '../constants/radius';
 import SPACING from '../constants/spacing';
 
-export default function GroupSettings({ navigation }) {
+export default function GroupSettings({ navigation, route }) {
 
-    let members = [
+    const { groupData } = route.params;
+    const [members, setMembers] = useState([
         {
             "_id": "66a0a7321fd21765e5e8f3a7",
             "name": "Rohan",
@@ -23,7 +24,23 @@ export default function GroupSettings({ navigation }) {
             "Date": "2024-07-23T11:07:33.267Z",
             "image": "https://res.cloudinary.com/dyhwcqnzl/image/upload/v1721803893/cjgpyrqtry0debrehlkd.png",
         }
-    ];
+    ])
+    // let members = [
+    //     {
+    //         "_id": "66a0a7321fd21765e5e8f3a7",
+    //         "name": "Rohan",
+    //         "image": "https://res.cloudinary.com/dyhwcqnzl/image/upload/v1721803893/cjgpyrqtry0debrehlkd.png",
+    //         "email": "abc@gmail.com",
+    //         "Date": "2024-07-24T07:03:14.806Z"
+    //     },
+    //     {
+    //         "_id": "669f8ef583086fb4bacc5da9",
+    //         "name": "Amit",
+    //         "email": "rohanrana@gmail.com",
+    //         "Date": "2024-07-23T11:07:33.267Z",
+    //         "image": "https://res.cloudinary.com/dyhwcqnzl/image/upload/v1721803893/cjgpyrqtry0debrehlkd.png",
+    //     }
+    // ];
 
     const getDate = (dateStr) => {
         // Create a Date object from the input string
@@ -39,6 +56,12 @@ export default function GroupSettings({ navigation }) {
         // Format the date using toLocaleDateString with the specified options
         return date.toLocaleDateString('en-GB', options);
     }
+
+    useEffect(() => {
+        console.log(groupData.totalSpends);
+        setMembers(groupData?.group?.members ? groupData?.group?.members : []);
+    }, [])
+
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
             <StatusBar barStyle={'light-content'} backgroundColor={'#000000'} />
@@ -59,27 +82,27 @@ export default function GroupSettings({ navigation }) {
                     <View style={{ width: wp(90), alignSelf: 'center', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.SM }}>
                             <View>
-                                <Image source={{ uri: "https://res.cloudinary.com/dyhwcqnzl/image/upload/v1722065408/Team_of_business_people_putting_hands_up_together_nmiq6a.jpg" }} style={{ width: hp(13), height: hp(10), borderRadius: RADIUS.S }} />
+                                <Image source={{ uri: groupData?.group?.image ? groupData?.group?.image : "https://res.cloudinary.com/dyhwcqnzl/image/upload/v1722065408/Team_of_business_people_putting_hands_up_together_nmiq6a.jpg" }} style={{ width: hp(13), height: hp(10), borderRadius: RADIUS.S }} />
                             </View>
                             <View>
                                 <Text style={{ fontFamily: 'Pacifico-Regular', color: COLORS.textHighlight, fontSize: hp(2.4) }}>
-                                    Dharmashala
+                                    {groupData?.group?.name}
                                 </Text>
                                 <Text style={{ fontFamily: 'Outfit-SemiBold', color: COLORS.textDarker, fontSize: hp(2) }}>
-                                    Trip
+                                    {groupData?.group?.type ? groupData?.group?.type : "Others"}
                                 </Text>
                             </View>
                         </View>
-                        <TouchableOpacity onPress={() => navigation.navigate('EditGroup')}>
+                        <TouchableOpacity onPress={() => navigation.navigate('EditGroup', { groupData: groupData })}>
                             <Feather name="edit-3" size={hp(3)} color="white" />
                         </TouchableOpacity>
                     </View>
 
                     <View style={{ width: wp(90), alignSelf: 'center', marginTop: hp(2) }}>
                         <Text style={{ color: COLORS.textBase, fontFamily: 'Outfit-Regular' }}>
-                            Created by Amit Pathania on &nbsp;
+                            Created by {groupData?.group?.creator?.name} on &nbsp;
                             <Text style={{ color: COLORS.textHighlight }}>
-                                {getDate('2024-07-24T10:37:43.635Z')}
+                                {getDate(groupData?.group?.Date)}
                             </Text>
                         </Text>
                     </View>
@@ -92,10 +115,10 @@ export default function GroupSettings({ navigation }) {
                         <View style={{ gap: SPACING.M }}>
                             {members.map((member) => {
                                 return (
-                                    <View style={{ width: wp(90), justifyContent: 'space-between', flexDirection: 'row', alignItems: 'center' }}>
+                                    <View key={member._id} style={{ width: wp(90), justifyContent: 'space-between', flexDirection: 'row', alignItems: 'center' }}>
                                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.SM, }}>
                                             <View>
-                                                <Image source={{ uri: member.image }} style={{ width: hp(6), height: hp(6), borderRadius: hp(100) }} />
+                                                <Image source={{ uri: member.image ? member.image : "https://res.cloudinary.com/dyhwcqnzl/image/upload/v1723301716/user-avatar-line-style-free-vector_wepybk.jpg" }} style={{ width: hp(6), height: hp(6), borderRadius: hp(100) }} />
                                             </View>
                                             <View style={{ gap: SPACING.XXS }}>
                                                 <Text style={{ color: COLORS.textBase, fontFamily: 'Outfit-SemiBold', fontSize: hp(2.2) }}>
@@ -106,24 +129,24 @@ export default function GroupSettings({ navigation }) {
                                                 </Text>
                                             </View>
                                         </View>
-                                        <View style={{ gap: SPACING.XS, width: hp(8), justifyContent: 'center', alignItems: 'center' }}>
+                                        {/* <View style={{ gap: SPACING.XS, width: hp(8), justifyContent: 'center', alignItems: 'center' }}>
                                             <Text style={{ fontFamily: 'Outfit-Regular', color: COLORS.success, fontSize: hp(1.6), textAlign: 'center' }}>
                                                 You lent
                                             </Text>
                                             <Text style={{ color: COLORS.success, fontFamily: 'Outfit-Regular', fontSize: hp(1.6) }}>
                                                 ₹2000
                                             </Text>
-                                        </View>
+                                        </View> */}
                                     </View>
                                 )
                             })}
                         </View>
-                        <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.XS, marginTop: hp(2) }}>
+                        {/* <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: SPACING.XS, marginTop: hp(2) }}>
                             <MaterialIcons name="exit-to-app" size={hp(3.5)} color={COLORS.danger} />
                             <Text style={{ color: COLORS.danger, fontFamily: 'Outfit-SemiBold', fontSize: hp(2) }}>
                                 Leave Group
                             </Text>
-                        </TouchableOpacity>
+                        </TouchableOpacity> */}
                     </View>
                 </ScrollView>
             </View>

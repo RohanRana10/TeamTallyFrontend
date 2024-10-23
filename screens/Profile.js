@@ -40,6 +40,16 @@ export default function Profile() {
         return Object.keys(errors).length === 0;
     }
 
+    const toHttps = (url) => {
+        // Check if the URL starts with 'http://'
+        if (url.startsWith('http://')) {
+            // Replace 'http://' with 'https://'
+            return url.replace('http://', 'https://');
+        }
+        // Return the original URL if it doesn't start with 'http://'
+        return url;
+    }
+
     const uploadImage = async () => {
         let result = {};
         try {
@@ -103,7 +113,7 @@ export default function Profile() {
                     setPhotoUploading(false);
                     setLoading(false);
                     console.log(JSON.stringify(response.data.status.statusMessage));
-                    setImageUrl(response.data.data);
+                    setImageUrl(toHttps(response.data.data));
                 }
 
             })
@@ -153,7 +163,7 @@ export default function Profile() {
                     setProfileData(response.data.data);
                     setName(response.data.data.name);
                     setEmail(response.data.data.email);
-                    setImageUrl(response.data.data.image ? response.data.data.image : "https://res.cloudinary.com/dyhwcqnzl/image/upload/v1723301716/user-avatar-line-style-free-vector_wepybk.jpg");
+                    setImageUrl(response.data.data.image ? toHttps(response.data.data.image) : "https://res.cloudinary.com/dyhwcqnzl/image/upload/v1723301716/user-avatar-line-style-free-vector_wepybk.jpg");
                     console.log(JSON.stringify(response.data.status.statusMessage));
                 }
             })

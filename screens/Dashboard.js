@@ -1,8 +1,8 @@
-import { ActivityIndicator, FlatList, Image, Modal, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, FlatList, Image, Keyboard, Modal, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import React, { useCallback, useContext, useEffect, useState } from 'react'
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import COLORS from '../constants/colors';
-import { AntDesign, Entypo, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { AntDesign, Entypo, Feather, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import SPACING from '../constants/spacing';
 import RADIUS from '../constants/radius';
 import { UserContext } from '../context/userContext';
@@ -36,11 +36,22 @@ export default function Dashboard({ navigation }) {
     const [groupCode, setGroupCode] = useState("");
     const [screenLoading, setScreenLoading] = useState(false);
     const [dashboardData, setDashboardData] = useState({});
+    const [errors, setErrors] = useState({});
+    const [loading, setLoading] = useState(false);
 
     const toggleModal = () => {
         setModalVisible(!modalVisible);
         setJoinMode(false);
     };
+
+    const validateForm = () => {
+        let errors = {};
+        if (!groupCode) {
+            errors.groupCode = "Group code is required!"
+        }
+        setErrors(errors);
+        return Object.keys(errors).length === 0;
+    }
 
     const fetchDashboardDetails = async () => {
         setScreenLoading(true);
@@ -66,6 +77,7 @@ export default function Dashboard({ navigation }) {
                         animationType: "slide-in",
                         swipeEnabled: false
                     });
+                    navigation.replace('Login');
                 }
                 else {
                     setScreenLoading(false);
@@ -76,7 +88,84 @@ export default function Dashboard({ navigation }) {
             })
             .catch((error) => {
                 console.log(error);
+                toast.show("Internal server error!", {
+                    type: "normal",
+                    placement: "bottom",
+                    duration: 3000,
+                    offset: 50,
+                    animationType: "slide-in",
+                    swipeEnabled: false
+                });
             });
+    }
+
+    const joinGroup = async () => {
+        setLoading(true);
+        let url = `${BASE_URL}/groups/add-member`
+        let token = await AsyncStorage.getItem('authToken');
+        let data = JSON.stringify({
+            "code": groupCode
+        });
+
+        let config = {
+            method: 'post',
+            maxBodyLength: Infinity,
+            url: url,
+            headers: {
+                'auth-token': token,
+                'Content-Type': 'application/json'
+            },
+            data: data
+        };
+
+        axios.request(config)
+            .then((response) => {
+                if (response.data.status.statusCode !== 1) {
+                    setLoading(false);
+                    console.log(response.data.status.statusMessage);
+                    toast.show(response.data.status.statusMessage, {
+                        type: "normal",
+                        placement: "bottom",
+                        duration: 3000,
+                        offset: 50,
+                        animationType: "slide-in",
+                        swipeEnabled: false
+                    });
+                    navigation.replace('Dashboard');
+                }
+                else {
+                    setLoading(false);
+                    console.log(response.data.status.statusMessage);
+                    toast.show(response.data.status.statusMessage, {
+                        type: "normal",
+                        placement: "bottom",
+                        duration: 3000,
+                        offset: 50,
+                        animationType: "slide-in",
+                        swipeEnabled: false
+                    });
+                    navigation.replace('Dashboard');
+                }
+            })
+            .catch((error) => {
+                console.log(error);
+                toast.show("Internal server error", {
+                    type: "normal",
+                    placement: "bottom",
+                    duration: 3000,
+                    offset: 50,
+                    animationType: "slide-in",
+                    swipeEnabled: false
+                });
+            });
+    }
+
+    const handleJoinGroup = () => {
+        if (validateForm()) {
+            Keyboard.dismiss();
+            joinGroup();
+            setErrors({});
+        }
     }
 
     // useEffect(() => {
@@ -141,13 +230,13 @@ export default function Dashboard({ navigation }) {
                                 <FlatList
                                     data={dashboardData.groups}
                                     contentContainerStyle={{ gap: SPACING.L, paddingBottom: hp(15) }}
-                                    keyExtractor={item => item.groupDetails._id}
+                                    keyExtractor={item => item?.groupDetails?._id}
                                     renderItem={({ item }) => (
-                                        <TouchableOpacity onPress={() => navigation.navigate('Group')} style={{ width: wp(90), alignSelf: 'center', justifyContent: 'center' }}>
+                                        <TouchableOpacity onPress={() => navigation.navigate('Group', { groupId: item?.groupDetails?._id })} style={{ width: wp(90), alignSelf: 'center', justifyContent: 'center' }}>
                                             <View style={{ flexDirection: 'row', gap: SPACING.SM, alignItems: 'center' }}>
-                                                <Image source={{ uri: "https://res.cloudinary.com/dyhwcqnzl/image/upload/v1722065408/Team_of_business_people_putting_hands_up_together_nmiq6a.jpg" }} style={{ width: hp(15), height: hp(12), borderRadius: RADIUS.S }} />
-                                                <View style={{ gap: SPACING.XS }}>
-                                                    <Text style={{ color: COLORS.textDarker, fontFamily: 'Outfit-SemiBold', fontSize: hp(2.4) }}>
+                                                <Image source={{ uri: item?.groupDetails?.image ? item?.groupDetails?.image : "https://res.cloudinary.com/dyhwcqnzl/image/upload/v1722065408/Team_of_business_people_putting_hands_up_together_nmiq6a.jpg" }} style={{ width: hp(15), height: hp(12), borderRadius: RADIUS.S }} />
+                                                <View style={{ gap: SPACING.XS, }}>
+                                                    <Text style={{ color: COLORS.textDarker, fontFamily: 'Outfit-SemiBold', fontSize: hp(2.4), width: wp(52) }}>
                                                         {item.groupDetails.name}
                                                     </Text>
                                                     {item.totalSpends === 0 ?
@@ -243,11 +332,21 @@ export default function Dashboard({ navigation }) {
                                     </View>
                                 </View>
 
-                                <TouchableOpacity style={{ backgroundColor: COLORS.bgHighlight, borderRadius: RADIUS.XS, width: wp(90), height: hp(5), alignSelf: 'center', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Text style={{ fontSize: hp(2.1), color: COLORS.black, fontFamily: 'Outfit-Bold' }}>
-                                        Join
-                                    </Text>
-                                </TouchableOpacity>
+                                {errors.groupCode && <View style={{ flexDirection: 'row', gap: SPACING.S, alignItems: 'center', width: wp(90) }}>
+                                    <Feather name="alert-circle" size={hp(2)} color="red" />
+                                    <Text style={{ color: 'red', fontSize: hp(1.7), fontFamily: 'Outfit-Regular' }}>{errors.groupCode}</Text>
+                                </View>}
+
+                                {loading ?
+                                    <View style={{ marginTop: hp(1) }}>
+                                        <ActivityIndicator size={'large'} color={COLORS.textHighlight} />
+                                    </View> :
+                                    <TouchableOpacity onPress={handleJoinGroup} style={{ backgroundColor: COLORS.bgHighlight, borderRadius: RADIUS.XS, width: wp(90), height: hp(5), alignSelf: 'center', alignItems: 'center', justifyContent: 'center', marginTop: hp(1) }}>
+                                        <Text style={{ fontSize: hp(2.1), color: COLORS.black, fontFamily: 'Outfit-Bold' }}>
+                                            Join
+                                        </Text>
+                                    </TouchableOpacity>
+                                }
                             </View>
                         }
 

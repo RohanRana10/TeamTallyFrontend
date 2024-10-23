@@ -15,7 +15,7 @@ import { useToast } from 'react-native-toast-notifications';
 
 export default function Login() {
     const context = useContext(UserContext);
-    const { saveUserData, saveUserToken } = context;
+    const { saveUserData, saveUserToken, saveUserId } = context;
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [passwordVisible, setPassworVisible] = useState(false);
@@ -87,6 +87,7 @@ export default function Login() {
                 else {
                     setLoading(false);
                     saveUserToken(response.data.data.authToken);
+                    saveUserId(response.data.data.user._id);
                     saveUserData(response.data.data.user);
                     navigation.replace('Dashboard');
                     console.log(JSON.stringify(response.data.status.statusMessage));
