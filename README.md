@@ -19,4 +19,4 @@ A mobile application that simplifies the process of splitting payments among gro
 
 - Loading Screen  
 
-![TMS HOME PAGE](https://i.postimg.cc/BQLH7TsH/home-page.png)  
+![TMS HOME PAGE](https://res.cloudinary.com/dyhwcqnzl/image/upload/v1729689367/IMG-20241023-WA0003_qcqmxv.jpg)  
