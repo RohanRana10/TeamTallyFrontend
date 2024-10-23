@@ -17,6 +17,7 @@ A mobile application that simplifies the process of splitting payments among gro
 
 ## App Screenshots
 
-- Loading Screen  
 
-![TMS HOME PAGE](https://res.cloudinary.com/dyhwcqnzl/image/upload/v1729689367/IMG-20241023-WA0003_qcqmxv.jpg)  
+
+![TEAMTALLY SPLASH SCREEN](https://res.cloudinary.com/dyhwcqnzl/image/upload/v1729689367/IMG-20241023-WA0003_qcqmxv.jpg)
+![TEAMTALLY DASHBOARD SCREEN](https://res.cloudinary.com/dyhwcqnzl/image/upload/v1729689368/IMG-20241023-WA0007_nw2orr.jpg)
